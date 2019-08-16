@@ -374,7 +374,8 @@ lazy val scioCore: Project = Project(
       "com.github.alexarchambault" %% "case-app" % caseappVersion,
       "me.lyh" %% "magnolia" % magnoliaVersion,
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
-      "org.apache.beam" % "beam-sdks-java-extensions-sql" % beamVersion
+      "org.apache.beam" % "beam-sdks-java-extensions-sql" % beamVersion,
+      "org.typelevel" %% "paiges-core" % "0.2.1"
     )
   )
   .dependsOn(
