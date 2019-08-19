@@ -36,7 +36,7 @@ object SchemaUtil {
     val suffix = Doc.char(')')
     val nested = Seq.newBuilder[Doc]
     val fields = schema.getFields.asScala.map { f =>
-      val (t, n) = getType(f.getType, path + f.getName)
+      val (t, n) = getType(f.getType, path + normalizeTypeName(f.getName))
       nested ++= n
       Doc.text(f.getName) + Doc.char(':') + Doc.space + Doc.text(t)
     }
@@ -65,7 +65,7 @@ object SchemaUtil {
         s"Array[$t]"
       case TypeName.MAP =>
         val (kt, kn) = getType(fieldType.getMapKeyType, path + "Key")
-        val (vt, vn) = getType(fieldType.getMapValueType, path + "Value")
+        val (vt, vn) = getType(fieldType.getMapValueType, path + "Val")
         nested ++= kn
         nested ++= vn
         s"Map[$kt, $vt]"
@@ -79,13 +79,29 @@ object SchemaUtil {
   }
   // scalastyle:on cyclomatic.complexity
 
+  // FIXME: reserved words, etc.
+  private def normalizeTypeName(name: String): String =
+    name.split('_').map(_.capitalize).mkString("_")
+
   def main(args: Array[String]): Unit = {
     val schema = Schema.builder()
       .addInt16Field("i16")
       .addInt32Field("i32")
-      .addArrayField("af", FieldType.FLOAT)
+      .addArrayField("array1", FieldType.FLOAT)
+      .addArrayField("array2", FieldType.row(Schema.builder()
+        .addBooleanField("bool")
+        .addStringField("str")
+        .build()))
       .addDateTimeField("dt")
-      .addMapField("m", FieldType.STRING, FieldType.INT64)
+      .addMapField("map1", FieldType.STRING, FieldType.INT64)
+      .addMapField("map2",
+        FieldType.row(Schema.builder()
+          .addStringField("k")
+          .build()),
+        FieldType.row(Schema.builder()
+          .addByteField("b")
+          .addDecimalField("d")
+          .build()))
       .addRowField("row1", Schema.builder()
         .addInt16Field("i16")
         .addInt32Field("i32")
@@ -93,6 +109,14 @@ object SchemaUtil {
       .addRowField("row2", Schema.builder()
         .addFloatField("f")
         .addDoubleField("d")
+        .build())
+      .addRowField("row3", Schema.builder()
+        .addFloatField("f")
+        .addDoubleField("d")
+        .addRowField("inner", Schema.builder()
+          .addStringField("str")
+          .addBooleanField("bool")
+          .build())
         .build())
       .build()
 
