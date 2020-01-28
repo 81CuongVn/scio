@@ -109,14 +109,14 @@ val beamSDKIODependencies = Def.settings(
       ExclusionRule("com.google.cloud", "google-cloud-core"),
       ExclusionRule("com.google.api.grpc", "proto-google-cloud-spanner-admin-database-v1"),
       ExclusionRule("com.google.api.grpc", "proto-google-common-protos")
-    ),
+    )
+  ),
+  dependencyOverrides ++= Seq(
     "io.grpc" % "grpc-core" % grpcVersion,
     "io.grpc" % "grpc-context" % grpcVersion,
     "io.grpc" % "grpc-auth" % grpcVersion,
     "io.grpc" % "grpc-netty" % grpcVersion,
-    "io.grpc" % "grpc-stub" % grpcVersion
-  ),
-  dependencyOverrides ++= Seq(
+    "io.grpc" % "grpc-stub" % grpcVersion,
     "com.google.guava" % "guava" % guavaVersion,
     "com.google.api" % "gax" % gaxVersion,
     "com.google.api" % "gax-grpc" % gaxVersion
@@ -242,7 +242,14 @@ val commonSettings = Sonatype.sonatypeSettings ++ assemblySettings ++ Seq(
     password <- sys.env.get("SONATYPE_PASSWORD")
   } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
   buildInfoKeys := Seq[BuildInfoKey](scalaVersion, version, "beamVersion" -> beamVersion),
-  buildInfoPackage := "com.spotify.scio"
+  buildInfoPackage := "com.spotify.scio",
+  versionReconciliation ++= Seq(
+    "io.grpc" % "grpc-stub" % "strict"
+    // "org.apache.avro" % "*" % "strict",
+    // "com.google.guava" % "*" % "strict",
+    // "io.netty" % "*" % "strict",
+    // "org.apache.beam" % "*" % "strict"
+  )
 ) ++ mimaSettings ++ scalafmtSettings
 
 lazy val itSettings = Defaults.itSettings ++ Seq(
@@ -561,7 +568,6 @@ lazy val `scio-bigquery`: Project = project
       "com.google.cloud" % "google-cloud-bigquerystorage" % bigQueryStorageVersion,
       "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
       "org.apache.beam" % "beam-sdks-java-extensions-google-cloud-platform-core" % beamVersion,
-      "org.apache.beam" % "beam-sdks-java-io-google-cloud-platform" % beamVersion,
       "commons-io" % "commons-io" % commonsIoVersion,
       "joda-time" % "joda-time" % jodaTimeVersion,
       "org.slf4j" % "slf4j-api" % slf4jVersion,
@@ -576,6 +582,7 @@ lazy val `scio-bigquery`: Project = project
       "org.hamcrest" % "hamcrest-core" % hamcrestVersion % "test,it",
       "org.hamcrest" % "hamcrest-library" % hamcrestVersion % "test,it"
     ),
+    beamSDKIODependencies,
     // Workaround for https://github.com/spotify/scio/issues/2308
     (Compile / doc) := Def.taskDyn {
       val default = (Compile / doc).taskValue
