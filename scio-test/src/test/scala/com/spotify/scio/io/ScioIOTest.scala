@@ -103,7 +103,7 @@ class ScioIOTest extends ScioIOSpec {
     val xs = (1 to 100).map(x => TableRow("x" -> x.toString))
     testJobTest(xs, in = "project:dataset.in_table", out = "project:dataset.out_table")(
       BigQueryIO(_)
-    )((sc, s) => sc.bigQueryTable(Table.Spec(s)))((coll, s) =>
+    )((sc, s) => sc.bigQueryTable[TableRow](Table.Spec(s)))((coll, s) =>
       coll.saveAsBigQueryTable(Table.Spec(s))
     )
   }

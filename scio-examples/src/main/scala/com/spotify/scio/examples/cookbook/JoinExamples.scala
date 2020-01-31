@@ -62,9 +62,9 @@ object JoinExamples {
 
     // Extract both sides as `SCollection[(String, String)]`s
     val eventsInfo =
-      sc.bigQueryTable(Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
+      sc.bigQueryTable[TableRow](Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
     val countryInfo =
-      sc.bigQueryTable(Table.Spec(ExampleData.COUNTRY_TABLE)).map(extractCountryInfo)
+      sc.bigQueryTable[TableRow](Table.Spec(ExampleData.COUNTRY_TABLE)).map(extractCountryInfo)
 
     eventsInfo
     // Left outer join to produce `SCollection[(String, (String, Option[String]))]
@@ -91,9 +91,9 @@ object SideInputJoinExamples {
     // Extract both sides as `SCollection[(String, String)]`s, and then convert right hand side as
     // a `SideInput` of `Map[String, String]`
     val eventsInfo =
-      sc.bigQueryTable(Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
+      sc.bigQueryTable[TableRow](Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
     val countryInfo = sc
-      .bigQueryTable(Table.Spec(ExampleData.COUNTRY_TABLE))
+      .bigQueryTable[TableRow](Table.Spec(ExampleData.COUNTRY_TABLE))
       .map(extractCountryInfo)
       .asMapSideInput
 
@@ -126,9 +126,9 @@ object HashJoinExamples {
 
     // Extract both sides as `SCollection[(String, String)]`s
     val eventsInfo =
-      sc.bigQueryTable(Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
+      sc.bigQueryTable[TableRow](Table.Spec(ExampleData.EVENT_TABLE)).flatMap(extractEventInfo)
     val countryInfo =
-      sc.bigQueryTable(Table.Spec(ExampleData.COUNTRY_TABLE)).map(extractCountryInfo)
+      sc.bigQueryTable[TableRow](Table.Spec(ExampleData.COUNTRY_TABLE)).map(extractCountryInfo)
 
     eventsInfo
     // Hash join uses side input under the hood and is a drop-in replacement for regular join

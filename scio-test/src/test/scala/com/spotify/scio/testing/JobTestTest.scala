@@ -92,7 +92,7 @@ object GenericParseFnAvroFileJob {
 object BigQueryJob {
   def main(cmdlineArgs: Array[String]): Unit = {
     val (sc, args) = ContextAndArgs(cmdlineArgs)
-    sc.bigQueryTable(Table.Spec(args("input")))
+    sc.bigQueryTable[TableRow](Table.Spec(args("input")))
       .saveAsBigQueryTable(Table.Spec(args("output")))
     sc.run()
     ()

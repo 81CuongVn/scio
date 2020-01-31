@@ -8,8 +8,8 @@ import com.spotify.scio.values.SCollection
 object FixBigQueryDeprecationsExample {
 
   def example[T <: TableRow](sc: ScioContext): SCollection[TableRow] = {
-    sc.bigQueryTable(Table.Spec("tableSpec")).map(identity)
-    sc.bigQueryTable(Table.Ref(new TableReference)).map(identity)
+    sc.bigQueryTable[TableRow](Table.Spec("tableSpec")).map(identity)
+    sc.bigQueryTable[TableRow](Table.Ref(new TableReference)).map(identity)
   }
 
 }

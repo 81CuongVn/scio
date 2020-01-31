@@ -53,7 +53,7 @@ object FilterExamples {
     // Open BigQuery table as a `SCollection[TableRow]`
     val table = Table.Spec(args.getOrElse("input", ExampleData.WEATHER_SAMPLES_TABLE))
     val pipe = sc
-      .bigQueryTable(table)
+      .bigQueryTable[TableRow](table)
       // Map `TableRow`s into `Record`s
       .map { row =>
         val year = row.getLong("year")
