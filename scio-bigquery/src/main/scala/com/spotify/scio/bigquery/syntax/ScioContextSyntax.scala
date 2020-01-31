@@ -41,6 +41,8 @@ import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.util.Try
+import com.spotify.scio.bigquery.Format
+import com.spotify.scio.bigquery.BigQueryFormatTable
 
 /** Enhanced version of [[ScioContext]] with BigQuery methods. */
 final class ScioContextOps(private val self: ScioContext) extends AnyVal {
@@ -104,8 +106,8 @@ final class ScioContextOps(private val self: ScioContext) extends AnyVal {
   /**
    * Get an SCollection for a BigQuery table.
    */
-  def bigQueryTable(table: Table): SCollection[TableRow] =
-    self.read(BigQueryTable(table))
+  def bigQueryTable[T: Coder: Format](table: Table): SCollection[T] =
+    self.read(BigQueryFormatTable(table))
 
   /**
    * Get an SCollection for a BigQuery table using the storage API.
