@@ -67,7 +67,7 @@ final class SCollectionTableRowOps[T <: TableRow](private val self: SCollection[
         tableDescription,
         timePartitioning
       )
-    self.asInstanceOf[SCollection[TableRow]].write(BigQueryTable(Table.Ref(table)))(param)
+    self.asInstanceOf[SCollection[TableRow]].write(BigQueryTable[TableRow](Table.Ref(table)))(param)
   }
 
   /**
@@ -96,7 +96,7 @@ final class SCollectionTableRowOps[T <: TableRow](private val self: SCollection[
       )
     self
       .asInstanceOf[SCollection[TableRow]]
-      .write(BigQueryTable(Table.Spec(tableSpec)))(param)
+      .write(BigQueryTable[TableRow](Table.Spec(tableSpec)))(param)
   }
 
   /**
@@ -121,7 +121,7 @@ final class SCollectionTableRowOps[T <: TableRow](private val self: SCollection[
       )
     self
       .asInstanceOf[SCollection[TableRow]]
-      .write(BigQueryTable(table))(param)
+      .write(BigQueryTable[TableRow](table))(param)
   }
 
   /**

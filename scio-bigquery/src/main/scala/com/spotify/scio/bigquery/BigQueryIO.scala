@@ -36,11 +36,7 @@ import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO.TypedRead.Method
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO.Write.{CreateDisposition, WriteDisposition}
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils.ConversionOptions
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils.ConversionOptions.TruncateTimestamps
-import org.apache.beam.sdk.io.gcp.bigquery.{
-  AvroWriteRequest,
-  BigQueryUtils,
-  SchemaAndRecord
-}
+import org.apache.beam.sdk.io.gcp.bigquery.{AvroWriteRequest, BigQueryUtils, SchemaAndRecord}
 import org.apache.beam.sdk.io.gcp.{bigquery => beam}
 import org.apache.beam.sdk.io.{Compression, TextIO}
 import org.apache.beam.sdk.transforms.SerializableFunction
@@ -148,71 +144,31 @@ object BigQueryIO {
       }
     }
 }
-object BigQueryTypedSelect {
-  object ReadParam {
-    private[bigquery] val DefaultFlattenResults = false
-  }
 
-  final case class ReadParam private (flattenResults: Boolean = ReadParam.DefaultFlattenResults)
+sealed abstract class Format[T: Coder] {
+  def underlying(table: Table): BigQueryTypedTable[T]
 }
 
-final case class BigQueryTypedSelect[T: Coder](
-  reader: beam.BigQueryIO.TypedRead[T],
-  sqlQuery: Query,
-  fromTableRow: TableRow => T
-) extends BigQueryIO[T] {
-  override type ReadP = BigQueryTypedSelect.ReadParam
-  override type WriteP = Nothing // ReadOnly
-
-  override def testId: String = s"BigQueryIO(${sqlQuery.underlying})"
-
-  override protected def read(sc: ScioContext, params: ReadP): SCollection[T] = {
-    val rc = reader.withCoder(CoderMaterializer.beam(sc, Coder[T]))
-    Reads.bqReadQuery(sc)(rc, sqlQuery.underlying, params.flattenResults)
+object Format {
+  implicit case object TableRowFormat extends Format[TableRow] {
+    override def underlying(table: Table): BigQueryTypedTable[TableRow] = BigQueryTypedTable(
+      beam.BigQueryIO.readTableRows(),
+      beam.BigQueryIO.writeTableRows(),
+      table,
+      (gr, ts) => BigQueryUtils.convertGenericRecordToTableRow(gr, ts)
+    )
+  }
+  implicit case object AvroFormat extends Format[GenericRecord] {
+    override def underlying(table: Table): BigQueryTypedTable[GenericRecord] =
+      BigQueryTypedTable(
+        _.getRecord(),
+        identity[GenericRecord],
+        (gr: GenericRecord, ts: TableSchema) => gr,
+        table
+      )
   }
 
-  override protected def write(data: SCollection[T], params: WriteP): Tap[T] =
-    throw new UnsupportedOperationException("BigQuerySelect is read-only")
-
-  override def tap(params: ReadP): Tap[T] = {
-    val tableReference = BigQuery
-      .defaultInstance()
-      .query
-      .run(sqlQuery.underlying, flattenResults = params.flattenResults)
-    BigQueryTap(tableReference).map(fromTableRow)
-  }
-}
-
-/**
- * Get an SCollection for a BigQuery SELECT query.
- * Both [[https://cloud.google.com/bigquery/docs/reference/legacy-sql Legacy SQL]] and
- * [[https://cloud.google.com/bigquery/docs/reference/standard-sql/ Standard SQL]] dialects are
- * supported. By default the query dialect will be automatically detected. To override this
- * behavior, start the query string with `#legacysql` or `#standardsql`.
- */
-final case class BigQuerySelect(sqlQuery: Query) extends BigQueryIO[TableRow] {
-  override type ReadP = BigQuerySelect.ReadParam
-  override type WriteP = Nothing // ReadOnly
-
-  private[this] lazy val underlying =
-    BigQueryTypedSelect(beam.BigQueryIO.readTableRows(), sqlQuery, identity)
-
-  override def testId: String = s"BigQueryIO(${sqlQuery.underlying})"
-
-  override protected def read(sc: ScioContext, params: ReadP): SCollection[TableRow] =
-    sc.read(underlying)(params)
-
-  override protected def write(data: SCollection[TableRow], params: WriteP): Tap[TableRow] =
-    throw new UnsupportedOperationException("BigQuerySelect is read-only")
-
-  override def tap(params: ReadP): Tap[TableRow] = underlying.tap(params)
-}
-
-object BigQuerySelect {
-  type ReadParam = BigQueryTypedSelect.ReadParam
-  val ReadParam = BigQueryTypedSelect.ReadParam
-
-  @inline final def apply(sqlQuery: String): BigQuerySelect = new BigQuerySelect(Query(sqlQuery))
+  def apply[T](implicit ev: Format[T], c: Coder[T]): Format[T] = ev
 }
 
 object BigQueryTypedTable {
@@ -347,67 +303,7 @@ final case class BigQueryTypedTable[T: Coder](
 /**
  * Get an IO for a BigQuery table.
  */
-final case class BigQueryTable(table: Table) extends BigQueryIO[TableRow] {
-  private[this] val underlying =
-    BigQueryTypedTable(
-      beam.BigQueryIO.readTableRows(),
-      beam.BigQueryIO.writeTableRows(),
-      table,
-      (gr, ts) => BigQueryUtils.convertGenericRecordToTableRow(gr, ts)
-    )
-
-  override type ReadP = Unit
-  override type WriteP = BigQueryTable.WriteParam
-
-  override def testId: String = s"BigQueryIO(${table.spec})"
-
-  override protected def read(sc: ScioContext, params: ReadP): SCollection[TableRow] =
-    sc.read(underlying)
-
-  override protected def write(data: SCollection[TableRow], params: WriteP): Tap[TableRow] = {
-    val ps = BigQueryTypedTable.WriteParam(
-      params.schema,
-      params.writeDisposition,
-      params.createDisposition,
-      params.tableDescription,
-      params.timePartitioning,
-      params.extendedErrorInfo
-    )(params.insertErrorTransform)
-
-    data.write(underlying)(ps)
-    tap(())
-  }
-
-  override def tap(read: ReadP): Tap[TableRow] = BigQueryTap(table.ref)
-}
-
-sealed abstract class Format[T: Coder] {
-  def underlying(table: Table): BigQueryTypedTable[T]
-}
-
-object Format {
-  implicit case object TableRowFormat extends Format[TableRow] {
-    override def underlying(table: Table): BigQueryTypedTable[TableRow] = BigQueryTypedTable(
-      beam.BigQueryIO.readTableRows(),
-      beam.BigQueryIO.writeTableRows(),
-      table,
-      (gr, ts) => BigQueryUtils.convertGenericRecordToTableRow(gr, ts)
-    )
-  }
-  implicit case object AvroFormat extends Format[GenericRecord] {
-    override def underlying(table: Table): BigQueryTypedTable[GenericRecord] =
-      BigQueryTypedTable(
-        _.getRecord(),
-        identity[GenericRecord],
-        (gr: GenericRecord, ts: TableSchema) => gr,
-        table
-      )
-  }
-
-  def apply[T](implicit ev: Format[T], c: Coder[T]): Format[T] = ev
-}
-
-final case class BigQueryFormatTable[T: Coder: Format](table: Table) extends BigQueryIO[T] {
+final case class BigQueryTable[T: Coder: Format](table: Table) extends BigQueryIO[T] {
 
   override type ReadP = Unit
   override type WriteP = BigQueryTable.WriteParam
@@ -434,7 +330,7 @@ final case class BigQueryFormatTable[T: Coder: Format](table: Table) extends Big
     tap(())
   }
 
-  override def tap(read: ReadP): Tap[T] = BigQueryFormatTap(table)
+  override def tap(read: ReadP): Tap[T] = BigQueryTap(table)
 }
 
 object BigQueryTable {
@@ -442,12 +338,79 @@ object BigQueryTable {
   val WriteParam = BigQueryTypedTable.WriteParam
 
   @deprecated("this method will be removed; use apply(Table.Ref(table)) instead", "0.8.0")
-  @inline final def apply(table: TableReference): BigQueryTable =
+  @inline final def apply[T: Coder: Format](table: TableReference): BigQueryTable[T] =
     BigQueryTable(Table.Ref(table))
 
   @deprecated("this method will be removed; use apply(Table.Spec(table)) instead", "0.8.0")
-  @inline final def apply(spec: String): BigQueryTable =
+  @inline final def apply[T: Coder: Format](spec: String): BigQueryTable[T] =
     BigQueryTable(Table.Spec(spec))
+}
+
+object BigQueryTypedSelect {
+  object ReadParam {
+    private[bigquery] val DefaultFlattenResults = false
+  }
+
+  final case class ReadParam private (flattenResults: Boolean = ReadParam.DefaultFlattenResults)
+}
+
+final case class BigQueryTypedSelect[T: Coder](
+  reader: beam.BigQueryIO.TypedRead[T],
+  sqlQuery: Query,
+  fromTableRow: TableRow => T
+) extends BigQueryIO[T] {
+  override type ReadP = BigQueryTypedSelect.ReadParam
+  override type WriteP = Nothing // ReadOnly
+
+  override def testId: String = s"BigQueryIO(${sqlQuery.underlying})"
+
+  override protected def read(sc: ScioContext, params: ReadP): SCollection[T] = {
+    val rc = reader.withCoder(CoderMaterializer.beam(sc, Coder[T]))
+    Reads.bqReadQuery(sc)(rc, sqlQuery.underlying, params.flattenResults)
+  }
+
+  override protected def write(data: SCollection[T], params: WriteP): Tap[T] =
+    throw new UnsupportedOperationException("BigQuerySelect is read-only")
+
+  override def tap(params: ReadP): Tap[T] = {
+    val tableReference = BigQuery
+      .defaultInstance()
+      .query
+      .run(sqlQuery.underlying, flattenResults = params.flattenResults)
+    BigQueryTap[TableRow](Table.Ref(tableReference)).map(fromTableRow)
+  }
+}
+
+/**
+ * Get an SCollection for a BigQuery SELECT query.
+ * Both [[https://cloud.google.com/bigquery/docs/reference/legacy-sql Legacy SQL]] and
+ * [[https://cloud.google.com/bigquery/docs/reference/standard-sql/ Standard SQL]] dialects are
+ * supported. By default the query dialect will be automatically detected. To override this
+ * behavior, start the query string with `#legacysql` or `#standardsql`.
+ */
+final case class BigQuerySelect(sqlQuery: Query) extends BigQueryIO[TableRow] {
+  override type ReadP = BigQuerySelect.ReadParam
+  override type WriteP = Nothing // ReadOnly
+
+  private[this] lazy val underlying =
+    BigQueryTypedSelect(beam.BigQueryIO.readTableRows(), sqlQuery, identity)
+
+  override def testId: String = s"BigQueryIO(${sqlQuery.underlying})"
+
+  override protected def read(sc: ScioContext, params: ReadP): SCollection[TableRow] =
+    sc.read(underlying)(params)
+
+  override protected def write(data: SCollection[TableRow], params: WriteP): Tap[TableRow] =
+    throw new UnsupportedOperationException("BigQuerySelect is read-only")
+
+  override def tap(params: ReadP): Tap[TableRow] = underlying.tap(params)
+}
+
+object BigQuerySelect {
+  type ReadParam = BigQueryTypedSelect.ReadParam
+  val ReadParam = BigQueryTypedSelect.ReadParam
+
+  @inline final def apply(sqlQuery: String): BigQuerySelect = new BigQuerySelect(Query(sqlQuery))
 }
 
 /**

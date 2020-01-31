@@ -30,7 +30,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-import com.spotify.scio.bigquery.Format._
 import com.twitter.chill.Externalizer
 
 /** Tap for BigQuery TableRow JSON files. */
@@ -42,7 +41,7 @@ final case class TableRowJsonTap(path: String) extends Tap[TableRow] {
 
 final case class BigQueryTypedTap[T: Coder](table: Table, fn: (GenericRecord, TableSchema) => T)
     extends Tap[T] {
-  lazy val underlying = BigQueryFormatTap[GenericRecord](table)
+  lazy val underlying = BigQueryTap[GenericRecord](table)
 
   override def value: Iterator[T] = {
     val ts = Externalizer(underlying.ts)
@@ -60,14 +59,7 @@ final case class BigQueryTypedTap[T: Coder](table: Table, fn: (GenericRecord, Ta
 }
 
 /** Tap for BigQuery tables. */
-final case class BigQueryTap(table: TableReference) extends Tap[TableRow] {
-  override def value: Iterator[TableRow] =
-    BigQuery.defaultInstance().tables.rows(Table.Ref(table))
-  override def open(sc: ScioContext): SCollection[TableRow] =
-    sc.bigQueryTable(Table.Ref(table))
-}
-
-final case class BigQueryFormatTap[T: Coder: Format](table: Table) extends Tap[T] {
+final case class BigQueryTap[T: Coder: Format](table: Table) extends Tap[T] {
   lazy val client = BigQuery.defaultInstance()
   lazy val ts = client.tables.table(table.spec).getSchema
 
@@ -114,7 +106,7 @@ final case class BigQueryTaps(self: Taps) {
     mkTap(
       s"BigQuery Table: $table",
       () => bqc.tables.exists(table),
-      () => BigQueryTable(Table.Ref(table)).tap(())
+      () => BigQueryTable[TableRow](Table.Ref(table)).tap(())
     )
 
   /** Get a `Future[Tap[TableRow]]` for BigQuery table. */
