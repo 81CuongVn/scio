@@ -164,6 +164,12 @@ val commonSettings = Sonatype.sonatypeSettings ++ assemblySettings ++ Seq(
       Seq(Tests.Argument(TestFrameworks.ScalaTest, "-l", "org.scalatest.tags.Slow"))
     }
   },
+
+  initialize in Test ~= { _ => System.setProperty(
+    "override.type.provider",
+    "com.spotify.scio.bigquery.validation.RefinedOverrideTypeProvider")
+  },
+
   evictionWarningOptions in update := EvictionWarningOptions.default
     .withWarnTransitiveEvictions(false),
   coverageExcludedPackages := Seq(
@@ -930,7 +936,8 @@ lazy val `scio-examples`: Project = project
       "com.github.alexarchambault" %% "case-app" % caseappVersion,
       "org.slf4j" % "slf4j-api" % slf4jVersion,
       "org.slf4j" % "slf4j-simple" % slf4jVersion,
-      "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test"
+      "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test",
+      "eu.timepit" %% "refined" % "0.9.12"
     ),
     beamSDKIODependencies,
     // exclude problematic sources if we don't have GCP credentials
