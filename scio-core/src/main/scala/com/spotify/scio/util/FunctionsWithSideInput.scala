@@ -21,7 +21,7 @@ import com.spotify.scio.values.SideInputContext
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 
 private[scio] object FunctionsWithSideInput {
   trait SideInputDoFn[T, U] extends NamedDoFn[T, U] {

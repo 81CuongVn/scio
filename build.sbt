@@ -42,7 +42,8 @@ val breezeVersion = "1.0"
 val caffeineVersion = "2.8.2"
 val caseappVersion = "2.0.0-M16"
 val catsVersion = "2.1.1"
-val chillVersion = "0.9.5"
+val chillVersion = "0.7.6"
+// val chillVersion = "0.9.5"
 val circeVersion = "0.13.0"
 val commonsCompressVersion = "1.20"
 val commonsIoVersion = "2.6"
@@ -81,7 +82,7 @@ val junitInterfaceVersion = "0.11"
 val junitVersion = "4.13"
 val kantanCodecsVersion = "0.5.1"
 val kantanCsvVersion = "0.6.0"
-val kryoVersion = "4.0.2" // explicitly depend on 4.0.1+ due to https://github.com/EsotericSoftware/kryo/pull/516
+val kryoVersion = "2.21" // explicitly depend on 4.0.1+ due to https://github.com/EsotericSoftware/kryo/pull/516
 val magnoliaVersion = "0.16.0"
 val magnolifyVersion = "0.1.7"
 val mercatorVersion = "0.3.0"
@@ -432,7 +433,7 @@ lazy val `scio-core`: Project = project
     ),
     libraryDependencies ++= Seq(
       "com.chuusai" %% "shapeless" % shapelessVersion,
-      "com.esotericsoftware" % "kryo-shaded" % kryoVersion,
+      "com.esotericsoftware.kryo" % "kryo" % kryoVersion,
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
       "com.github.alexarchambault" %% "case-app" % caseappVersion,
@@ -454,7 +455,11 @@ lazy val `scio-core`: Project = project
       "com.twitter" % "chill-protobuf" % chillVersion,
       "com.twitter" %% "algebird-core" % algebirdVersion,
       "com.twitter" %% "chill" % chillVersion,
-      "com.twitter" %% "chill-algebird" % chillVersion,
+      "org.apache.xbean" % "xbean-asm7-shaded" % "4.15",
+      "com.twitter" %% "chill-algebird" % "0.7.7" excludeAll (
+        ExclusionRule("com.twitter", "chill"),
+        ExclusionRule("com.twitter", "chill-java"),
+      ),
       "commons-io" % "commons-io" % commonsIoVersion,
       "io.grpc" % "grpc-auth" % grpcVersion,
       "io.grpc" % "grpc-core" % grpcVersion,
@@ -582,7 +587,7 @@ lazy val `scio-macros`: Project = project
     description := "Scio macros",
     libraryDependencies ++= Seq(
       "com.chuusai" %% "shapeless" % shapelessVersion,
-      "com.esotericsoftware" % "kryo-shaded" % kryoVersion,
+      "com.esotericsoftware.kryo" % "kryo" % kryoVersion,
       "org.apache.beam" % "beam-sdks-java-extensions-sql" % beamVersion,
       "org.apache.avro" % "avro" % avroVersion,
       "com.propensive" %% "magnolia" % magnoliaVersion
@@ -719,7 +724,7 @@ lazy val `scio-cassandra3`: Project = project
       "org.apache.hadoop" % "hadoop-mapreduce-client-core" % hadoopVersion,
       "org.scalatest" %% "scalatest" % scalatestVersion % Test,
       "org.apache.beam" % "beam-sdks-java-core" % beamVersion % Test,
-      "com.esotericsoftware" % "kryo-shaded" % kryoVersion,
+      "com.esotericsoftware.kryo" % "kryo" % kryoVersion,
       "com.google.guava" % "guava" % guavaVersion,
       "com.twitter" % "chill-java" % chillVersion
     )

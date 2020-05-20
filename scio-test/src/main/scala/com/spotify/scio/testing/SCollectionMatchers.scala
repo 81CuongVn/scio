@@ -35,7 +35,7 @@ import org.hamcrest.MatcherAssert.assertThat
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 import cats.kernel.Eq
 import org.apache.beam.sdk.testing.SerializableMatchers
 import com.spotify.scio.coders.CoderMaterializer

@@ -21,7 +21,7 @@ import com.spotify.scio.values.WindowedValue
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 import org.apache.beam.sdk.transforms.windowing.BoundedWindow
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 
 private[scio] object FunctionsWithWindowedValue {
   def filterFn[T, U](f: WindowedValue[T] => Boolean): DoFn[T, T] =

@@ -31,7 +31,7 @@ import org.apache.beam.sdk.schemas.Schema.FieldType
 import org.apache.beam.sdk.schemas.{SchemaProvider, Schema => BSchema}
 import org.apache.beam.sdk.transforms.SerializableFunction
 import org.apache.beam.sdk.values.{Row, TypeDescriptor}
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag

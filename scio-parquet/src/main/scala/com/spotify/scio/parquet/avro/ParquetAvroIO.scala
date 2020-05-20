@@ -25,7 +25,7 @@ import com.spotify.scio.io.{ScioIO, Tap, TapOf}
 import com.spotify.scio.parquet.{BeamInputFile, GcsConnectorUtil}
 import com.spotify.scio.util.ScioUtil
 import com.spotify.scio.values.SCollection
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 import org.apache.avro.Schema
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.SpecificRecordBase

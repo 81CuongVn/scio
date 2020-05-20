@@ -25,7 +25,7 @@ import com.spotify.scio.util._
 import com.spotify.scio.coders.{Coder, CoderMaterializer}
 
 import com.spotify.scio.values.SCollection
-import com.twitter.chill.ClosureCleaner
+import com.spotify.scio.util.ClosureCleaner
 import org.apache.beam.sdk.transforms.DoFn.ProcessElement
 import org.apache.beam.sdk.transforms.{DoFn, ParDo}
 import org.apache.beam.sdk.values.{TupleTag, TupleTagList}

@@ -714,7 +714,9 @@ sealed trait SCollection[T] extends PCollectionWrapper[T] {
       "combine/sum does not support default value and may fail in some streaming scenarios. " +
         "Consider aggregate/fold instead."
     )
-    this.pApply(Combine.globally(Functions.reduceFn(context, sg)).withoutDefaults())
+    this
+      .pApply(Combine.globally(Functions.reduceFn(context, sg)).withoutDefaults())
+      .setCoder(CoderMaterializer.beam(this.context, coder))
   }
 
   /**
