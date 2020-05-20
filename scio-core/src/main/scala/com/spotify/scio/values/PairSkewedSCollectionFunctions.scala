@@ -20,6 +20,8 @@ package com.spotify.scio.values
 import com.spotify.scio.coders.Coder
 
 import com.twitter.algebird.{CMS, CMSHasher}
+import org.apache.beam.sdk.coders.SerializableCoder
+import org.apache.beam.sdk.values.TypeDescriptor
 
 final private case class Partitions[K, V](hot: SCollection[(K, V)], chill: SCollection[(K, V)])
 
@@ -296,6 +298,9 @@ class PairSkewedSCollectionFunctions[K, V](val self: SCollection[(K, V)]) {
     // Key aggregator for `k->#values`
     // TODO: might be better to use SparseCMS
     val keyAggregator = CMS.aggregator[K](eps, delta, seed)
+
+    implicit val trololo: Coder[CMS[K]] =
+      Coder.beam(SerializableCoder.of[CMS[K]](new TypeDescriptor[CMS[K]] {}))
 
     val leftSideKeys = if (sampleFraction < 1.0) {
       self.withName("Sample LHS").sample(withReplacement, sampleFraction).keys

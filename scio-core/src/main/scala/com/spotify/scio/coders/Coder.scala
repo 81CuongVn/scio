@@ -558,7 +558,7 @@ private[coders] object CoderStackTrace {
       .currentThread()
       .getStackTrace
       .dropWhile(!_.getClassName.contains(CoderMaterializer.getClass.getName))
-      .take(10)
+      .take(20)
 
   def append[T <: Throwable](
     cause: T,
