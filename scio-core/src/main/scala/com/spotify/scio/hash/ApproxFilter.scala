@@ -277,7 +277,7 @@ sealed trait ApproxFilterCompanion {
         createSideInput(elems, 0L, fpp)
       )
     } else {
-      val settings = partitionSettings(expectedInsertions, fpp, 100 * 1024 * 1024)
+      val settings = partitionSettings(expectedInsertions, fpp, 5 * 1024 * 1024)
       logger.info(
         "Partition settings for approximate filter side input of {} keys: " +
           "partitions={}, expectedInsertions={}, sizeBytes={}",

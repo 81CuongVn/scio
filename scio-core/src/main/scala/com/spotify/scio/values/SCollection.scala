@@ -276,13 +276,18 @@ sealed trait SCollection[T] extends PCollectionWrapper[T] {
     if (numPartitions == 1) {
       Seq(this)
     } else {
-      this
-        .applyInternal(Partition.of[T](numPartitions, Functions.partitionFn[T](numPartitions, f)))
-        .getAll
-        .iterator
-        .asScala
-        .map(context.wrap)
-        .toSeq
+      val n = this.internal.getName()
+      (0 to (numPartitions - 1)).toList
+        .map(i => this.filter(f(_) == i))
+
+      // val c = this.internal.getCoder()
+      // this
+      //   .applyInternal(Partition.of[T](numPartitions, Functions.partitionFn[T](numPartitions, f)))
+      //   .getAll
+      //   .iterator
+      //   .asScala
+      //   .map(s => context.wrap(s).setCoder(c))
+      //   .toSeq
     }
   }
 
@@ -714,9 +719,10 @@ sealed trait SCollection[T] extends PCollectionWrapper[T] {
       "combine/sum does not support default value and may fail in some streaming scenarios. " +
         "Consider aggregate/fold instead."
     )
+    val bc = CoderMaterializer.beam(this.context, coder)
     this
       .pApply(Combine.globally(Functions.reduceFn(context, sg)).withoutDefaults())
-      .setCoder(CoderMaterializer.beam(this.context, coder))
+      .setCoder(bc)
   }
 
   /**
