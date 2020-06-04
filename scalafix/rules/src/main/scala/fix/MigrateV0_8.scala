@@ -201,7 +201,6 @@ final class ConsistenceJoinNames extends SemanticRule("ConsistenceJoinNames") {
           case t2 @ Term.Name("that3")       => Patch.replaceTree(t2, "rhs3")
           case t2 @ Term.Name("thatNumKeys") => Patch.replaceTree(t2, "rhsNumKeys")
           case s =>
-            println(s)
             Patch.empty
         }
       case _ => Patch.empty
