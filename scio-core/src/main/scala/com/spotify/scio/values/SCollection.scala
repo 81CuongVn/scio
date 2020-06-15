@@ -26,6 +26,7 @@ import com.spotify.scio.ScioContext
 import com.spotify.scio.coders.{AvroBytesUtil, Coder, CoderMaterializer}
 import com.spotify.scio.io._
 import com.spotify.scio.schemas.{Schema, SchemaMaterializer, To}
+import com.spotify.scio.state.StatefulSCollectionFunctions
 import com.spotify.scio.testing.TestDataManager
 import com.spotify.scio.util._
 import com.spotify.scio.util.random.{BernoulliSampler, PoissonSampler}
@@ -89,6 +90,11 @@ object SCollection {
     s: SCollection[(K, V)]
   ): PairSkewedSCollectionFunctions[K, V] =
     new PairSkewedSCollectionFunctions(s)
+
+  implicit def makeStatefulSCollectionFunctions[K, V](
+    s: SCollection[(K, V)]
+  ): StatefulSCollectionFunctions[K, V] =
+    new StatefulSCollectionFunctions(s)
 
   final private[scio] case class State(postCoGroup: Boolean = false)
 }
