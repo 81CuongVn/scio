@@ -19,11 +19,7 @@ import scala.concurrent.Future
 
 
 object AddMissingImports {
-  // implicit def coderFoo: Coder[Foo] =
-  //   Coder.xmap(Coder[(String, Int)])(
-  //     { case (a, b) => Foo(a, b) },
-  //     { case Foo(a, b) => (a, b) }
-  //   )
+  // implicit def coderFoo: Coder[Foo] = Coder.gen
 
   def computeAndSaveDay[M <: Message : ClassTag](sc: ScioContext): Unit = {
     sc.protobufFile[M]("input")
