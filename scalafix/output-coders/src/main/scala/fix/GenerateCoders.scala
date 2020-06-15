@@ -1,11 +1,9 @@
-/*
-rule = GenerateCoders
-*/
 package fix
 package coders
 
 import com.google.protobuf.Message
 import com.spotify.scio._
+import com.spotify.scio.avro._
 import scala.reflect.ClassTag
 import com.spotify.scio.values.SCollection
 
@@ -21,7 +19,7 @@ object AddMissingImports {
         Option(Bar(f))
       }
       .saveAsTextFile("output")
-    sc.close()
+    sc.run()
     ()
   }
 }

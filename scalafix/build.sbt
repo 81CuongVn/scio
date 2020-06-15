@@ -5,7 +5,8 @@ inThisBuild(
     scalaVersion := V.scala212,
     addCompilerPlugin(scalafixSemanticdb),
     scalacOptions ++= List(
-      "-Yrangepos"
+      "-Yrangepos",
+      "-P:semanticdb:synthetics:on"
     ),
     skip in publish := true,
     scalafmtOnCompile := false,
@@ -49,6 +50,16 @@ lazy val `output-0_8` = project
     libraryDependencies ++= scio(Scio.`0.8`)
   )
 
+lazy val `input-coders` = project
+  .settings(
+    libraryDependencies ++= scio(Scio.`0.9`)
+  )
+
+lazy val `output-coders` = project
+  .settings(
+    libraryDependencies ++= scio(Scio.`0.9`)
+  )
+
 lazy val tests = project
   .settings(
     libraryDependencies += "ch.epfl.scala" % "scalafix-testkit" % V.scalafixVersion % Test cross CrossVersion.full,
@@ -56,19 +67,23 @@ lazy val tests = project
       compile
         .in(Compile)
         .dependsOn(
-          compile.in(input, Compile),
-          compile.in(`input-0_8`, Compile)
+          // compile.in(input, Compile),
+          compile.in(`input-0_8`, Compile),
+          compile.in(`input-coders`, Compile)
         )
         .value,
     scalafixTestkitOutputSourceDirectories :=
-      sourceDirectories.in(output, Compile).value ++
-        sourceDirectories.in(`output-0_8`, Compile).value,
+      // sourceDirectories.in(output, Compile).value ++
+      sourceDirectories.in(`output-0_8`, Compile).value ++
+        sourceDirectories.in(`output-coders`, Compile).value,
     scalafixTestkitInputSourceDirectories :=
+      // sourceDirectories.in(input, Compile).value ++
       sourceDirectories.in(`input-0_8`, Compile).value ++
-        sourceDirectories.in(input, Compile).value,
+        sourceDirectories.in(`input-coders`, Compile).value,
     scalafixTestkitInputClasspath :=
-      fullClasspath.in(input, Compile).value ++
-        fullClasspath.in(`input-0_8`, Compile).value
+      // fullClasspath.in(input, Compile).value ++
+      fullClasspath.in(`input-0_8`, Compile).value ++
+        fullClasspath.in(`input-coders`, Compile).value
   )
   .dependsOn(rules)
   .enablePlugins(ScalafixTestkitPlugin)
