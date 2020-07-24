@@ -126,15 +126,17 @@ private[types] object TypeProvider {
     val (queryFormat: String, _) :: queryArgs = extractedArgs
     val query = BigQueryPartitionUtil.latestQuery(bigquery, formatString(extractedArgs.map(_._1)))
     val schema = bigquery.query.schema(query)
-    val traits = List(tq"${p(c, SType)}.HasQuery")
-
-    val queryDef =
-      q"override def query: _root_.java.lang.String = $queryFormat"
-
-    val queryRawDef =
-      q"override def queryRaw: _root_.java.lang.String = $queryFormat"
+    val queryRawDef = q"override def queryRaw: _root_.java.lang.String = $queryFormat"
+    val traits =
+      annottees.map(_.tree) match {
+        case q"class $cName" :: _ =>
+          List(tq"${p(c, SType)}.QueryBase[$cName]")
+        case _ =>
+          Nil
+      }
 
     val queryArgTypes = queryArgs.map(t => t._2 -> TermName(c.freshName("queryArg$")))
+
     val queryFnDef = if (queryArgTypes.nonEmpty) {
       val typesQ = queryArgTypes.map { case (tpt, termName) => q"$termName: $tpt" }
       val queryFn = q"""
@@ -150,20 +152,7 @@ private[types] object TypeProvider {
       List.empty[c.Tree]
     }
 
-    val qa =
-      annottees.map(_.tree) match {
-        case q"class $cName" :: _ =>
-          List(q"""
-            implicit def bqQuery: ${p(c, SType)}.Query[$cName] =
-              new ${p(c, SType)}.Query[$cName]{
-                $queryDef
-                $queryRawDef
-              }
-          """)
-        case _ =>
-          Nil
-      }
-    val overrides = queryFnDef ::: queryDef :: queryRawDef :: qa
+    val overrides = queryRawDef :: queryFnDef
 
     schemaToType(c)(schema, annottees, traits, overrides)
   }
@@ -189,12 +178,8 @@ private[types] object TypeProvider {
         val desc = getTableDescription(c)(clazzDef.asInstanceOf[ClassDef])
         val defSchema =
           q"override def schema: ${p(c, GModel)}.TableSchema = ${p(c, SType)}.schemaOf[$cName]"
-        val defAvroSchema =
-          q"override def avroSchema: org.apache.avro.Schema =  ${p(c, SType)}.avroSchemaOf[$cName]"
         val defTblDesc =
           desc.headOption.map(d => q"override def tableDescription: _root_.java.lang.String = $d")
-        val defToPrettyString =
-          q"override def toPrettyString(indent: Int = 0): String = ${p(c, s"$SBQ.types.SchemaUtil")}.toPrettyString(this.schema, ${cName.toString}, indent)"
         val fnTrait =
           tq"${TypeName(s"Function${fields.size}")}[..${fields.map(_.children.head)}, $cName]"
         val traits = (if (fields.size <= 22) Seq(fnTrait) else Seq()) ++ defTblDesc
@@ -225,7 +210,7 @@ private[types] object TypeProvider {
             ${companion(c)(
             cName,
             traits,
-            Seq(defSchema, defAvroSchema, defToPrettyString) ++ defTblDesc,
+            Seq(defSchema) ++ defTblDesc,
             taggedFields.asInstanceOf[Seq[Tree]].size,
             maybeCompanion
           )}
@@ -335,10 +320,6 @@ private[types] object TypeProvider {
           schema.setFactory(new JacksonFactory)
           q"override def schema: ${p(c, GModel)}.TableSchema = ${p(c, SUtil)}.parseSchema(${schema.toString})"
         }
-        val defAvroSchema =
-          q"override def avroSchema: org.apache.avro.Schema = ${p(c, BigQueryUtils)}.toGenericAvroSchema(${cName.toString}, this.schema.getFields)"
-        val defToPrettyString =
-          q"override def toPrettyString(indent: Int = 0): String = ${p(c, s"$SBQ.types.SchemaUtil")}.toPrettyString(this.schema, ${cName.toString}, indent)"
 
         val caseClassTree = q"""${caseClass(c)(mods, cName, fields, body)}"""
         val maybeCompanion = tail.headOption
@@ -347,7 +328,7 @@ private[types] object TypeProvider {
             ${companion(c)(
             cName,
             traits ++ defTblTrait,
-            Seq(defSchema, defAvroSchema, defToPrettyString) ++ overrides ++ defTblDesc,
+            Seq(defSchema) ++ overrides ++ defTblDesc,
             fields.size,
             maybeCompanion
           )}
@@ -461,12 +442,15 @@ private[types] object TypeProvider {
     val overrideFlag =
       if (traits.exists(_.toString().contains("Function"))) Flag.OVERRIDE
       else NoFlags
+
     val tupled =
       if (numFields > 1 && numFields <= 22)
         Seq(q"$overrideFlag def tupled = (${TermName(name.toString)}.apply _).tupled")
       else Nil
 
-    val m = converters(c)(name) ++ tupled ++ methods
+    val defcName = q"override def cName = ${name.toString}"
+
+    val m = converters(c)(name) ++ tupled ++ methods :+ defcName
     val tn = TermName(name.toString)
 
     if (originalCompanion.isDefined) {

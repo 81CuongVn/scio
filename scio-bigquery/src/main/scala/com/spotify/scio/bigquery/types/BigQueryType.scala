@@ -24,6 +24,7 @@ import org.apache.avro.generic.GenericRecord
 import scala.annotation.{compileTimeOnly, StaticAnnotation}
 import scala.reflect.runtime.universe._
 import scala.util.Try
+import org.apache.beam.sdk.io.gcp.bigquery.BigQueryUtils
 
 /**
  * Macro annotations and converter generators for BigQuery types.
@@ -75,11 +76,15 @@ object BigQueryType {
    */
   trait HasSchema[T] {
 
+    /** Case class name. */
+    def cName: String
+
     /** Case class schema. */
     def schema: TableSchema
 
     /** Case class avro schema. */
-    def avroSchema: Schema
+    def avroSchema: Schema =
+      BigQueryUtils.toGenericAvroSchema(cName, schema.getFields)
 
     /** Avro [[GenericRecord]] to `T` converter. */
     def fromAvro: GenericRecord => T
@@ -94,7 +99,8 @@ object BigQueryType {
     def toTableRow: T => TableRow
 
     /** Get a pretty string representation of the schema. */
-    def toPrettyString(indent: Int = 0): String
+    def toPrettyString(indent: Int = 0): String =
+      SchemaUtil.toPrettyString(schema, cName, indent)
   }
 
   /**
@@ -148,6 +154,20 @@ object BigQueryType {
    * @group trait
    */
   trait Query[T] extends HasQuery
+
+  /**
+   * Base implementation of HasQuery methods. For internal use only.
+   * Classes derived from {{@BigqueryType.fromQuery}} will inherit members from this trait.
+   */
+  trait QueryBase[T] extends HasQuery { self =>
+    override def query: String = queryRaw
+
+    implicit def bqQuery: Query[T] =
+      new Query[T] {
+        override def queryRaw: String = self.queryRaw
+        override def query: String = self.queryRaw
+      }
+  }
 
   /**
    * Trait for companion objects of case classes generated with table description.
