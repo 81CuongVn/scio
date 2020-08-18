@@ -155,7 +155,7 @@ scalafixScalaBinaryVersion in ThisBuild := CrossVersion.binaryScalaVersion(scala
 
 val commonSettings = Sonatype.sonatypeSettings ++ assemblySettings ++ Seq(
   organization := "com.spotify",
-  scalaVersion := "2.13.3",
+  scalaVersion := "2.12.12",
   crossScalaVersions := Seq("2.12.12", scalaVersion.value),
   scalacOptions ++= Scalac.commonsOptions.value,
   Compile / doc / scalacOptions --= Seq("-release", "8"),
