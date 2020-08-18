@@ -34,7 +34,7 @@ val autoServiceVersion = "1.0-rc7"
 val autoValueVersion = "1.7.4"
 val avroVersion = "1.8.2"
 val beamVendorVersion = "0.1"
-val beamVersion = "2.23.0"
+val beamVersion = "2.25.0-esquilo-SNAPSHOT"
 val bigdataossVersion = "2.1.2"
 val bigQueryStorageVersion = "0.125.0-beta"
 val bigtableClientVersion = "1.13.0"
@@ -165,6 +165,7 @@ val commonSettings = Sonatype.sonatypeSettings ++ assemblySettings ++ Seq(
   // protobuf-lite is an older subset of protobuf-java and causes issues
   excludeDependencies += "com.google.protobuf" % "protobuf-lite",
   resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += "Artifactory" at "https://artifactory.spotify.net/artifactory/libs-snapshot-local",
   testOptions in Test += Tests.Argument("-oD"),
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
   testOptions ++= {
