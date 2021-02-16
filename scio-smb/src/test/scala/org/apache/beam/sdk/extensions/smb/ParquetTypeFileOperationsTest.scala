@@ -20,8 +20,6 @@ package org.apache.beam.sdk.extensions.smb
 import java.io.File
 import java.util.UUID
 import com.spotify.scio.CoreSysProps
-import com.spotify.scio.coders.{Coder, CoderMaterializer}
-import magnolify.parquet._
 import org.apache.beam.sdk.io.LocalResources
 import org.apache.beam.sdk.io.fs.ResolveOptions.StandardResolveOptions
 import org.apache.beam.sdk.io.fs.ResourceId
@@ -34,14 +32,9 @@ import scala.jdk.CollectionConverters._
 
 object ParquetTypeFileOperationsTest {
   case class User(name: String, age: Int)
-
-  val userType: ParquetType[User] = ParquetType[User]
-  val userCoder = CoderMaterializer.beamWithDefault(Coder[User])
   val users = (1 to 10).map(i => User(s"user$i", i))
 
   case class Username(name: String)
-  val usernameType: ParquetType[Username] = ParquetType[Username]
-  val usernameCoder = CoderMaterializer.beamWithDefault(Coder[Username])
 }
 
 class ParquetTypeFileOperationsTest extends AnyFlatSpec with Matchers {
@@ -51,11 +44,12 @@ class ParquetTypeFileOperationsTest extends AnyFlatSpec with Matchers {
 
   "ParquetTypeFileOperations" should "work" in {
     val dir = tmpDir
-    val file = LocalResources.fromFile(dir, true)
+    val file = LocalResources
+      .fromFile(dir, true)
       .resolve("file.parquet", StandardResolveOptions.RESOLVE_FILE)
     writeFile(file)
 
-    val fileOps = ParquetTypeFileOperations.of(userType, userCoder)
+    val fileOps = ParquetTypeFileOperations[User]()
     val actual = fileOps.iterator(file).asScala.toSeq
 
     actual shouldBe users
@@ -64,11 +58,12 @@ class ParquetTypeFileOperationsTest extends AnyFlatSpec with Matchers {
 
   it should "work with projection" in {
     val dir = tmpDir
-    val file = LocalResources.fromFile(dir, true)
+    val file = LocalResources
+      .fromFile(dir, true)
       .resolve("file.parquet", StandardResolveOptions.RESOLVE_FILE)
     writeFile(file)
 
-    val fileOps = ParquetTypeFileOperations.of(usernameType, usernameCoder)
+    val fileOps = ParquetTypeFileOperations[Username]()
     val actual = fileOps.iterator(file).asScala.toSeq
 
     actual shouldBe users.map(u => Username(u.name))
@@ -77,22 +72,23 @@ class ParquetTypeFileOperationsTest extends AnyFlatSpec with Matchers {
 
   it should "work with predicate" in {
     val dir = tmpDir
-    val file = LocalResources.fromFile(dir, true)
+    val file = LocalResources
+      .fromFile(dir, true)
       .resolve("file.parquet", StandardResolveOptions.RESOLVE_FILE)
     writeFile(file)
 
     val predicate = FilterApi.ltEq(FilterApi.intColumn("age"), java.lang.Integer.valueOf(5))
-    val fileOps = ParquetTypeFileOperations.of(userType, userCoder, predicate)
+    val fileOps = ParquetTypeFileOperations[User](predicate)
     val actual = fileOps.iterator(file).asScala.toSeq
 
     actual shouldBe users.filter(_.age <= 5)
     tmpDir.delete()
   }
 
-   private def writeFile(file: ResourceId): Unit = {
-     val fileOps = ParquetTypeFileOperations.of(userType, userCoder, CompressionCodecName.GZIP)
-     val writer = fileOps.createWriter(file);
-     users.foreach(writer.write)
-     writer.close()
-   }
+  private def writeFile(file: ResourceId): Unit = {
+    val fileOps = ParquetTypeFileOperations[User](CompressionCodecName.GZIP)
+    val writer = fileOps.createWriter(file);
+    users.foreach(writer.write)
+    writer.close()
+  }
 }
