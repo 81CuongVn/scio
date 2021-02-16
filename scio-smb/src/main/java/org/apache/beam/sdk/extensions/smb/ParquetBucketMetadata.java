@@ -26,7 +26,6 @@ import org.apache.beam.sdk.coders.*;
 import org.apache.beam.sdk.transforms.display.DisplayData;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
-import scala.Product;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -64,7 +63,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
         numShards,
         (Class<K>) toJavaType(keyClass),
         hashType,
-        validateKeyField(keyField, keyClass, recordClass),
+        validateKeyField(keyField, toJavaType(keyClass), recordClass),
         filenamePrefix);
   }
 
@@ -84,7 +83,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
         numShards,
         (Class<K>) toJavaType(keyClass),
         hashType,
-        AvroBucketMetadata.validateKeyField(keyField, keyClass, schema),
+        AvroBucketMetadata.validateKeyField(keyField, toJavaType(keyClass), schema),
         filenamePrefix);
   }
 
@@ -136,8 +135,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
     }
     switch (recordType) {
       case AVRO: return extractAvroKey(value);
-      case SCALA:
-        break;
+      case SCALA: return extractScalaKey(value);
     }
     throw new IllegalStateException("Should never reach here");
   }
@@ -152,6 +150,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
     return key;
   }
 
+  // FIXME: what about `Option[T]`
   private K extractScalaKey(V value) {
     if (getters == null) {
       getters = new Method[keyPath.length];
@@ -191,7 +190,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
   private static RecordType getRecordType(Class recordClass) {
     if (GenericRecord.class.isAssignableFrom(recordClass)) {
       return RecordType.AVRO;
-    } else if (Product.class.isAssignableFrom(recordClass)) {
+    } else if (scala.Product.class.isAssignableFrom(recordClass)) {
       return RecordType.SCALA;
     } else {
       throw new IllegalArgumentException("Unsupported record class " + recordClass.getName());
@@ -223,7 +222,7 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
       }
 
       Preconditions.checkArgument(
-          Product.class.isAssignableFrom(getter.getReturnType()),
+          scala.Product.class.isAssignableFrom(getter.getReturnType()),
           "Non-leaf key field " + keyPath[i] + " is not a Scala type");
       current = getter.getReturnType();
     }
@@ -237,12 +236,11 @@ public class ParquetBucketMetadata<K, V> extends BucketMetadata<K, V> {
       ));
     }
 
-    // `getReturnType` returns Java types, e.g. `java.lang.Integer`
-    final Class<?> finalKeyFieldClass = getter.getReturnType();
+    final Class<?> finalKeyFieldClass = toJavaType(getter.getReturnType());
     Preconditions.checkArgument(
         finalKeyFieldClass.isAssignableFrom(keyClass),
         String.format(
-            "Key class %d did not conform to its Scala type. Must be of class: %s",
+            "Key class %s did not conform to its Scala type. Must be of class: %s",
             keyClass, finalKeyFieldClass));
 
     return keyField;
