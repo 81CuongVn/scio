@@ -144,7 +144,7 @@ public class AvroBucketMetadata<K, V extends GenericRecord> extends BucketMetada
         && Arrays.equals(keyPath, that.keyPath);
   }
 
-  private static String validateKeyField(String keyField, Class keyClass, Schema schema) {
+  static String validateKeyField(String keyField, Class keyClass, Schema schema) {
     final String[] keyPath = toKeyPath(keyField);
 
     Schema currSchema = schema;
@@ -248,7 +248,7 @@ public class AvroBucketMetadata<K, V extends GenericRecord> extends BucketMetada
 
   // Coders for types commonly used as keys in Avro
 
-  private static class ByteBufferCoder extends AtomicCoder<ByteBuffer> {
+  static class ByteBufferCoder extends AtomicCoder<ByteBuffer> {
     private static final ByteBufferCoder INSTANCE = new ByteBufferCoder();
 
     private ByteBufferCoder() {}
@@ -273,7 +273,7 @@ public class AvroBucketMetadata<K, V extends GenericRecord> extends BucketMetada
     }
   }
 
-  private static class CharSequenceCoder extends AtomicCoder<CharSequence> {
+  static class CharSequenceCoder extends AtomicCoder<CharSequence> {
     private static final CharSequenceCoder INSTANCE = new CharSequenceCoder();
 
     private CharSequenceCoder() {}
