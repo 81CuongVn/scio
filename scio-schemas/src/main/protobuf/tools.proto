@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option java_package = "com.spotify.scio.gcs.tools";
+option optimize_for = SPEED;
+
+message ProtoTools {
+  int32 id = 1;
+  string name = 2;
+}

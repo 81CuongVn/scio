@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "AvroTools",
+  "namespace": "com.spotify.scio.gcs.tools",
+  "fields": [
+    {"name": "id", "type": "int"},
+    {"name": "name", "type": "string"}
+  ]
+}

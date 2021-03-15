@@ -963,6 +963,7 @@ lazy val `scio-examples`: Project = project
     `scio-jdbc`,
     `scio-extra`,
     `scio-elasticsearch7`,
+    `scio-parquet`,
     `scio-tensorflow`,
     `scio-sql`,
     `scio-test` % "compile->test",
