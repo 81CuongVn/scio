@@ -900,6 +900,7 @@ lazy val `scio-examples`: Project = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
+      "com.beachape" %% "enumeratum" % "1.6.1",
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
       "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
       "org.apache.beam" % "beam-sdks-java-io-google-cloud-platform" % beamVersion,
