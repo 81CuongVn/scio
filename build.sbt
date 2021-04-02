@@ -137,6 +137,84 @@ lazy val keepExistingHeader =
         .trim()
   })
 
+val checkAlign = taskKey[Unit]("Check dependency alignment")
+
+lazy val checkAlignImpl = Def.task {
+  import sbt.Classpaths.updateTask
+  val log = streams.value.log
+  log.info(s"Checking dependency alignment for ${projectInfo.value.nameFormal}")
+  val report = (updateTask tag(Tags.Update, Tags.Network)).value
+  report.allModules
+
+  def getPrefix(m: ModuleID): Option[String] = (m.organization, m.name) match {
+    // Exclude artifacts with different versions from rest of the organization:prefix
+    case ("com.google.api", "gax-httpjson") => None
+    case ("com.spotify", "hermes-java-meta") => None
+    case ("io.netty", "netty-tcnative-boringssl-static") => None
+    case ("io.opencensus", "opencensus-proto") => None
+
+    // Exclude artifacts with inconsistent versions
+    case ("org.apache.commons", n) if n.startsWith("commons-") => None
+    case ("org.apache.beam", n) if n.startsWith("beam-vendor-") => None
+    case ("com.google.api.grpc", _) => None
+    case ("com.google.apis", n) if n.startsWith("google-api-services-") => None
+    case ("com.google.cloud", n) if n.startsWith("google-cloud-") => None
+    case ("com.spotify.data", _) => None
+
+    // Some organizations, group all artifacts
+    case (o, _)
+      if Set(
+        "com.fasterxml.jackson.core",
+        "com.google.api-client", // google-api-client, google-api-client-{jackson2,java6}
+        "com.google.auth", // google-auth-library-{credentials,oauth2-http}
+        "com.google.cloud.bigdataoss", // {gcsio,util}
+        "com.google.http-client",
+        "com.google.oauth-client",
+        "com.google.protobuf",
+        "com.spotify.data.keymapping",
+        "io.grpc",
+        "io.netty",
+        "org.apache.avro",
+        "org.apache.beam",
+        "org.apache.hadoop",
+        "org.apache.parquet"
+      ).contains(o) =>
+      Some("*")
+
+    // Most artifacts, e.g. scio-{core,google-cloud-platform}
+    case (_, n) =>
+      val idx = n.indexOf('-')
+      Some(if (idx == -1) n else n.take(idx) + "-*")
+  }
+
+  val options = EvictionWarningOptions.default
+  report.configurations
+    .filter(x => options.configurations.contains[ConfigRef](x.configuration))
+    .flatMap(_.allModules)
+    .groupBy(_.organization)
+    .toList
+    .sortBy(_._1)
+    .foreach {
+      case (org, xs) =>
+        xs.groupBy(getPrefix)
+          .toList
+          .flatMap(kv => kv._1.map((_, kv._2)))
+          .sortBy(_._1)
+          .foreach {
+            case (pre, ys) =>
+              if (ys.size > 1 && ys.map(_.revision).distinct.size > 1) {
+                val header = s"Dependency alignment violation for $org:${pre}-*"
+                val body = ys
+                  .sortBy(_.name)
+                  .toList
+                  .map(y => s"* ${y.organization}:${y.name}:${y.revision}")
+                  .distinct // FIXME: why are there duplicates?
+                log.err((header :: body).mkString("\n"))
+              }
+          }
+    }
+}
+
 val commonSettings = Def
   .settings(
     organization := "com.spotify",
@@ -223,7 +301,8 @@ val commonSettings = Def
       )
     ),
     mimaSettings,
-    formatSettings
+    formatSettings,
+    checkAlign := checkAlignImpl.value
   )
 
 lazy val publishSettings = Def.settings(
