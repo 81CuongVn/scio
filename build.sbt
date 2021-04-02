@@ -160,6 +160,7 @@ lazy val checkAlignImpl = Def.task {
     case ("com.google.apis", n) if n.startsWith("google-api-services-") => None
     case ("com.google.cloud", n) if n.startsWith("google-cloud-") => None
     case ("com.spotify.data", _) => None
+    case ("io.netty", "netty") if m.revision.startsWith("3.") => None
 
     // Some organizations, group all artifacts
     case (o, _)
