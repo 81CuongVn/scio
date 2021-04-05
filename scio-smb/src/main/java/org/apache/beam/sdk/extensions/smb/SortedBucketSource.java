@@ -674,7 +674,7 @@ public class SortedBucketSource<FinalKeyT> extends BoundedSource<KV<FinalKeyT, C
               targetParallelism,
               file -> {
                 try {
-                  return fileOperations.iterator(file);
+                  return new BufferedIterator<>(fileOperations.iterator(file), 10000);
                 } catch (Exception e) {
                   throw new RuntimeException(e);
                 }
