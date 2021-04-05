@@ -204,7 +204,7 @@ lazy val checkAlignImpl = Def.task {
           .foreach {
             case (pre, ys) =>
               if (ys.size > 1 && ys.map(_.revision).distinct.size > 1) {
-                val header = s"Dependency alignment violation for $org:${pre}-*"
+                val header = s"Dependency alignment violation for $org:${pre}"
                 val body = ys
                   .sortBy(_.name)
                   .toList
