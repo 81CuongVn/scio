@@ -48,11 +48,9 @@ val commonsLang3Version = "3.12.0"
 val commonsMath3Version = "3.6.1"
 val commonsTextVersion = "1.9"
 val datastoreV1ProtoClientVersion = "1.6.3"
-// scala-steward:off
 val elasticsearch6Version = "6.8.23"
 val elasticsearch7Version = "7.17.1"
 val elasticsearch8Version = "8.1.2"
-// scala-steward:on
 val featranVersion = "0.8.0-RC2"
 val flinkVersion = "1.13.5"
 val gaxVersion = "2.8.1"
@@ -676,7 +674,8 @@ lazy val `scio-elasticsearch6`: Project = project
       "org.slf4j" % "slf4j-api" % slf4jVersion,
       "org.elasticsearch" % "elasticsearch" % elasticsearch6Version,
       "org.elasticsearch" % "elasticsearch-x-content" % elasticsearch6Version,
-      "org.elasticsearch.client" % "transport" % elasticsearch6Version
+      "org.elasticsearch.client" % "transport" % elasticsearch6Version,
+      "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     )
   )
   .dependsOn(
@@ -700,7 +699,8 @@ lazy val `scio-elasticsearch7`: Project = project
       "org.elasticsearch" % "elasticsearch-x-content" % elasticsearch7Version,
       "org.elasticsearch.client" % "elasticsearch-rest-client" % elasticsearch7Version,
       "org.elasticsearch.client" % "elasticsearch-rest-high-level-client" % elasticsearch7Version,
-      "org.elasticsearch" % "elasticsearch" % elasticsearch7Version
+      "org.elasticsearch" % "elasticsearch" % elasticsearch7Version,
+      "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     )
   )
   .dependsOn(
@@ -718,8 +718,8 @@ lazy val `scio-elasticsearch8`: Project = project
       "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
       "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
       "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-      "co.elastic.clients" % "elasticsearch-java" % elasticsearch8Version
+      "co.elastic.clients" % "elasticsearch-java" % elasticsearch8Version,
+      "org.scalatest" %% "scalatest" % scalatestVersion % "test",
     )
   )
   .dependsOn(
