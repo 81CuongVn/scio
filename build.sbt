@@ -48,8 +48,7 @@ val commonsLang3Version = "3.12.0"
 val commonsMath3Version = "3.6.1"
 val commonsTextVersion = "1.9"
 val datastoreV1ProtoClientVersion = "1.6.3"
-val elasticsearch6Version = "6.8.23" // scala-steward:off
-val elasticsearch7Version = "7.17.2" // scala-steward:off
+val elasticsearch7Version = "7.17.3" // scala-steward:off
 val elasticsearch8Version = "8.1.2"
 val featranVersion = "0.8.0-RC2"
 val flinkVersion = "1.13.5"
@@ -373,7 +372,6 @@ lazy val root: Project = Project("scio", file("."))
     `scio-avro`,
     `scio-google-cloud-platform`,
     `scio-cassandra3`,
-    `scio-elasticsearch6`,
     `scio-elasticsearch7`,
     `scio-elasticsearch8`,
     `scio-extra`,
@@ -661,49 +659,23 @@ lazy val `scio-cassandra3`: Project = project
   )
   .configs(IntegrationTest)
 
-lazy val `scio-elasticsearch6`: Project = project
-  .in(file("scio-elasticsearch/es6"))
-  .settings(commonSettings)
-  .settings(publishSettings)
-  .settings(
-    description := "Scio add-on for writing to Elasticsearch",
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
-      "org.apache.beam" % "beam-vendor-guava-26_0-jre" % beamVendorVersion,
-      "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
-      "joda-time" % "joda-time" % jodaTimeVersion,
-      "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "org.elasticsearch" % "elasticsearch" % elasticsearch6Version,
-      "org.elasticsearch" % "elasticsearch-x-content" % elasticsearch6Version,
-      "org.elasticsearch.client" % "transport" % elasticsearch6Version,
-      "org.scalatest" %% "scalatest" % scalatestVersion % "test"
-    )
+def elasticsearchSettings(esVersion: String) = Def.settings(
+  description := "Scio add-on for writing to Elasticsearch",
+  libraryDependencies ++= Seq(
+    "co.elastic.clients" % "elasticsearch-java" % esVersion,
+    "commons-io" % "commons-io" % commonsIoVersion,
+    "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
+    "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
+    "org.slf4j" % "slf4j-api" % slf4jVersion,
+    "org.scalatest" %% "scalatest" % scalatestVersion % "test"
   )
-  .dependsOn(
-    `scio-core`,
-    `scio-test` % "test"
-  )
+)
 
 lazy val `scio-elasticsearch7`: Project = project
   .in(file("scio-elasticsearch/es7"))
   .settings(commonSettings)
   .settings(publishSettings)
-  .settings(
-    description := "Scio add-on for writing to Elasticsearch",
-    libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
-      "org.apache.beam" % "beam-vendor-guava-26_0-jre" % beamVendorVersion,
-      "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
-      "joda-time" % "joda-time" % jodaTimeVersion,
-      "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "org.apache.httpcomponents" % "httpcore" % httpCoreVersion,
-      "org.elasticsearch" % "elasticsearch-x-content" % elasticsearch7Version,
-      "org.elasticsearch.client" % "elasticsearch-rest-client" % elasticsearch7Version,
-      "org.elasticsearch.client" % "elasticsearch-rest-high-level-client" % elasticsearch7Version,
-      "org.elasticsearch" % "elasticsearch" % elasticsearch7Version,
-      "org.scalatest" %% "scalatest" % scalatestVersion % "test"
-    )
-  )
+  .settings(elasticsearchSettings(elasticsearch7Version))
   .dependsOn(
     `scio-core`,
     `scio-test` % "test"
@@ -713,17 +685,7 @@ lazy val `scio-elasticsearch8`: Project = project
   .in(file("scio-elasticsearch/es8"))
   .settings(commonSettings)
   .settings(publishSettings)
-  .settings(
-    description := "Scio add-on for writing to Elasticsearch",
-    libraryDependencies ++= Seq(
-      "co.elastic.clients" % "elasticsearch-java" % elasticsearch8Version,
-      "commons-io" % "commons-io" % commonsIoVersion,
-      "org.apache.beam" % "beam-sdks-java-core" % beamVersion,
-      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionCompatVersion,
-      "org.slf4j" % "slf4j-api" % slf4jVersion,
-      "org.scalatest" %% "scalatest" % scalatestVersion % "test"
-    )
-  )
+  .settings(elasticsearchSettings(elasticsearch8Version))
   .dependsOn(
     `scio-core`,
     `scio-test` % "test"
